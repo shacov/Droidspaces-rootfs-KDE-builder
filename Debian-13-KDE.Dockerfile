@@ -41,7 +41,7 @@ RUN apt-get update && \
     # 用户请求的基础开发/编辑工具
     git nano vim sudo \
     # 网络与 SSH 工具
-    openssh-server net-tools iptables iputils-ping iproute2 dnsutils \
+    openssh-server sshpass net-tools iptables iputils-ping iproute2 dnsutils \
     # 用于系统监控的 procps 进程工具
     procps htop\
     # 核心内核模块支持
