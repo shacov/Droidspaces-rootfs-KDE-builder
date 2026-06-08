@@ -99,6 +99,7 @@ RUN apt-get update && \
 RUN update-alternatives --set iptables /usr/sbin/iptables-legacy && \
     update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
 
+# 配置系统语言与时区
 RUN sed -i '/en_US.UTF-8/s/^# //' /etc/locale.gen && \
     if [ "$ENABLE_zh_tz_ARG" = "true" ]; then \
         export DEBIAN_FRONTEND=noninteractive && \
@@ -107,7 +108,7 @@ RUN sed -i '/en_US.UTF-8/s/^# //' /etc/locale.gen && \
         dpkg-reconfigure -f noninteractive tzdata && \
         sed -i '/zh_CN.UTF-8/s/^# //' /etc/locale.gen && \
         locale-gen && \
-        update-locale LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8; \
+        update-locale LANG=zh_CN.UTF-8 LANGUAGE=zh_CN:en_US LC_ALL=zh_CN.UTF-8; \
     else \
         locale-gen && \
         update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8; \
@@ -118,7 +119,7 @@ RUN sed -i '/en_US.UTF-8/s/^# //' /etc/locale.gen && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
     # 如果容器内存在默认的 debian 用户，则将其连同家目录一起删除
     deluser --remove-home debian || true && \
-    useradd -m -s /bin/bash ${USERNAME} && echo "${USERNAME}:1234" | chpasswd 
+    useradd -m -s /bin/bash ${USERNAME} && echo "${USERNAME}:123456" | chpasswd
 
 # 添加环境变量
 RUN << 'EOF_RUN' 
@@ -252,7 +253,7 @@ grep -q '^_apt:' /etc/passwd && usermod -g aid_inet _apt || true
 if [ -f /etc/adduser.conf ]; then
     sed -i '/^EXTRA_GROUPS=/d; /^ADD_EXTRA_GROUPS=/d' /etc/adduser.conf
     echo 'ADD_EXTRA_GROUPS=1' >> /etc/adduser.conf
-    echo 'EXTRA_GROUPS="aid_inet aid_net_raw input video tty"' >> /etc/adduser.conf
+    echo 'EXTRA_GROUPS="aid_inet aid_net_raw input video tty sudo droidspaces-gpu"' >> /etc/adduser.conf
 fi
 
 # --- 2. 针对 Systemd 的特定修复 ---
