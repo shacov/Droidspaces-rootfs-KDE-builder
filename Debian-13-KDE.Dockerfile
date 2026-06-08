@@ -39,11 +39,11 @@ RUN apt-get update && \
     # 核心工具组件
     bash jq dialog coreutils file findutils grep sed gawk curl wget ca-certificates locales bash-completion udev dbus systemd-sysv systemd-resolved fastfetch \
     # 用户请求的基础开发/编辑工具
-    git nano  sudo \
+    git nano vim sudo \
     # 网络与 SSH 工具
     openssh-server net-tools iptables iputils-ping iproute2 dnsutils \
     # 用于系统监控的 procps 进程工具
-    procps \
+    procps htop\
     # 核心内核模块支持
     kmod tzdata && \
     ############################################## KDE支持 ################################################
@@ -121,10 +121,15 @@ RUN sed -i '/en_US.UTF-8/s/^# //' /etc/locale.gen && \
     useradd -m -s /bin/bash ${USERNAME} && echo "${USERNAME}:1234" | chpasswd 
 
 # 添加环境变量
-RUN cat <<'EOF' > /etc/environment
+RUN << 'EOF_RUN' 
+    if [ "$BUILD_KDE" = "min" ] || [ "$BUILD_KDE" = "conc" ] ; then
+        cat <<'EOF' >> /etc/environment
 XCURSOR_SIZE=48
 DISPLAY=:5
 EOF
+    fi
+EOF_RUN
+
 # 音频选择
 RUN if [ "$PulseAudio" = "socket" ]; then \
         echo "PULSE_SERVER=unix:/tmp/.pulse-socket" >> /etc/environment; \
@@ -320,25 +325,25 @@ done
 # 限制特定的网络服务：只有当容器配置为 NAT 模式时才允许启动
 # 这可以有效防止容器在“主机网络模式（Host Mode）”下运行时破坏手机原本的蜂窝移动数据网络
 for unit in NetworkManager.service dhcpcd.service systemd-resolved.service systemd-networkd.service; do
-    if [ -f "$GUEST_SYSTEMD_PATH/$unit" ] || [ -f "/etc/systemd/system/multi-user.target.wants/$unit" ]; then
-        mkdir -p "/etc/systemd/system/${unit}.d"
-        cat > "/etc/systemd/system/${unit}.d/99-netmode-limit.conf" << 'EOF'
+    # if [ -f "$GUEST_SYSTEMD_PATH/$unit" ] || [ -f "/etc/systemd/system/multi-user.target.wants/$unit" ]; then
+    mkdir -p "/etc/systemd/system/${unit}.d"
+    cat > "/etc/systemd/system/${unit}.d/99-netmode-limit.conf" << 'EOF'
 [Service]
 ExecCondition=
 ExecCondition=/bin/sh -c "grep -q 'net_mode=nat' /run/droidspaces/container.config"
 EOF
-    fi
+    # fi
 done
 # 仅在启用硬件访问时限制 udev 服务启动
 for unit in systemd-udevd.service systemd-udev-trigger.service systemd-udev-settle.service; do
-    if [ -f "$GUEST_SYSTEMD_PATH/$unit" ] || [ -f "/etc/systemd/system/multi-user.target.wants/$unit" ]; then
-        mkdir -p "/etc/systemd/system/${unit}.d"
-        cat > "/etc/systemd/system/${unit}.d/99-hwaccess-limit.conf" << 'EOF'
+    # if [ -f "$GUEST_SYSTEMD_PATH/$unit" ] || [ -f "/etc/systemd/system/multi-user.target.wants/$unit" ]; then
+    mkdir -p "/etc/systemd/system/${unit}.d"
+    cat > "/etc/systemd/system/${unit}.d/99-hwaccess-limit.conf" << 'EOF'
 [Service]
 ExecCondition=
 ExecCondition=/bin/sh -c "grep -q 'enable_hw_access=1' /run/droidspaces/container.config"
 EOF
-    fi
+    # fi
 done
 
 # 针对 Android 环境微调日志轮转（logrotate）的最大容量限制
