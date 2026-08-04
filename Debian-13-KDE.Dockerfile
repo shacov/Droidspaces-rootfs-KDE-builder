@@ -97,7 +97,7 @@ RUN apt-get update && \
         apt-get purge -y --auto-remove modemmanager || true; \
     fi && \
     ############################################## anland_kde(wayland) 支持 ################################################
-    if [ "$ENABLE_anland_kde_ARG" = "true" ] && ([ "$BUILD_KDE" = "min" ] || [ "$BUILD_KDE" = "conc" ] || [ "$BUILD_KDE" = "mobile" ]); then \
+    if [ "$ENABLE_anland_kde_ARG" = "true" ]; then \
         echo "--> [开启] 正在安装 anland_kde..." && \
         echo "--> [开启] 正在安装预编译的 kwin deb 包..." && \
         if ! dpkg -i /tmp/anland-build/Debian13/*.deb; then \
