@@ -56,11 +56,11 @@ RUN apt-get update && \
     # 核心工具组件
     bash jq dialog coreutils file findutils grep sed gawk curl wget ca-certificates locales bash-completion udev dbus systemd-sysv systemd-resolved fastfetch \
     # 用户请求的基础开发/编辑工具
-    git nano  sudo \
+    git nano vim neovim sudo \
     # 网络与 SSH 工具
-    openssh-server net-tools iptables iputils-ping iproute2 dnsutils \
+    openssh-server sshpass net-tools iptables iputils-ping iproute2 dnsutils \
     # 用于系统监控的 procps 进程工具
-    procps \
+    procps htop \
     # 核心内核模块支持
     kmod tzdata && \
     ############################################## KDE支持 ################################################
@@ -152,6 +152,7 @@ RUN apt-get update && \
 RUN update-alternatives --set iptables /usr/sbin/iptables-legacy && \
     update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
 
+# 配置系统语言与时区
 RUN sed -i '/en_US.UTF-8/s/^# //' /etc/locale.gen && \
     if [ "$ENABLE_zh_tz_ARG" = "true" ]; then \
         export DEBIAN_FRONTEND=noninteractive && \
@@ -160,7 +161,7 @@ RUN sed -i '/en_US.UTF-8/s/^# //' /etc/locale.gen && \
         dpkg-reconfigure -f noninteractive tzdata && \
         sed -i '/zh_CN.UTF-8/s/^# //' /etc/locale.gen && \
         locale-gen && \
-        update-locale LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8; \
+        update-locale LANG=zh_CN.UTF-8 LANGUAGE=zh_CN:en_US LC_ALL=zh_CN.UTF-8; \
     else \
         locale-gen && \
         update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8; \
@@ -171,7 +172,7 @@ RUN sed -i '/en_US.UTF-8/s/^# //' /etc/locale.gen && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
     # 如果容器内存在默认的 debian 用户，则将其连同家目录一起删除
     deluser --remove-home debian || true && \
-    useradd -m -s /bin/bash ${USERNAME} && echo "${USERNAME}:1234" | chpasswd 
+    useradd -m -s /bin/bash ${USERNAME} && echo "${USERNAME}:123456" | chpasswd
 
 # 为所有 Debian RootFS 安装 Droidspaces USB Manager
 RUN /usr/local/sbin/install-droidspaces-usb-manager --user "${USERNAME}"
@@ -332,7 +333,7 @@ grep -q '^_apt:' /etc/passwd && usermod -g aid_inet _apt || true
 if [ -f /etc/adduser.conf ]; then
     sed -i '/^EXTRA_GROUPS=/d; /^ADD_EXTRA_GROUPS=/d' /etc/adduser.conf
     echo 'ADD_EXTRA_GROUPS=1' >> /etc/adduser.conf
-    echo 'EXTRA_GROUPS="aid_inet aid_net_raw input video tty"' >> /etc/adduser.conf
+    echo 'EXTRA_GROUPS="aid_inet aid_net_raw input video tty sudo droidspaces-gpu"' >> /etc/adduser.conf
 fi
 
 # --- 2. 针对 Systemd 的特定修复 ---
@@ -405,25 +406,25 @@ done
 # 限制特定的网络服务：只有当容器配置为 NAT 模式时才允许启动
 # 这可以有效防止容器在“主机网络模式（Host Mode）”下运行时破坏手机原本的蜂窝移动数据网络
 for unit in NetworkManager.service dhcpcd.service systemd-resolved.service systemd-networkd.service; do
-    if [ -f "$GUEST_SYSTEMD_PATH/$unit" ] || [ -f "/etc/systemd/system/multi-user.target.wants/$unit" ]; then
-        mkdir -p "/etc/systemd/system/${unit}.d"
-        cat > "/etc/systemd/system/${unit}.d/99-netmode-limit.conf" << 'EOF'
+    # if [ -f "$GUEST_SYSTEMD_PATH/$unit" ] || [ -f "/etc/systemd/system/multi-user.target.wants/$unit" ]; then
+    mkdir -p "/etc/systemd/system/${unit}.d"
+    cat > "/etc/systemd/system/${unit}.d/99-netmode-limit.conf" << 'EOF'
 [Service]
 ExecCondition=
 ExecCondition=/bin/sh -c "grep -qE 'net_mode=(nat|gateway)' /run/droidspaces/container.config"
 EOF
-    fi
+    # fi
 done
 # 仅在启用硬件访问时限制 udev 服务启动
 for unit in systemd-udevd.service systemd-udev-trigger.service systemd-udev-settle.service; do
-    if [ -f "$GUEST_SYSTEMD_PATH/$unit" ] || [ -f "/etc/systemd/system/multi-user.target.wants/$unit" ]; then
-        mkdir -p "/etc/systemd/system/${unit}.d"
-        cat > "/etc/systemd/system/${unit}.d/99-hwaccess-limit.conf" << 'EOF'
+    # if [ -f "$GUEST_SYSTEMD_PATH/$unit" ] || [ -f "/etc/systemd/system/multi-user.target.wants/$unit" ]; then
+    mkdir -p "/etc/systemd/system/${unit}.d"
+    cat > "/etc/systemd/system/${unit}.d/99-hwaccess-limit.conf" << 'EOF'
 [Service]
 ExecCondition=
 ExecCondition=/bin/sh -c "grep -q 'enable_hw_access=1' /run/droidspaces/container.config"
 EOF
-    fi
+    # fi
 done
 
 # 针对 Android 环境微调日志轮转（logrotate）的最大容量限制
