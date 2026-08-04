@@ -175,7 +175,7 @@ RUN sed -i '/en_US.UTF-8/s/^# //' /etc/locale.gen && \
     useradd -m -s /bin/bash ${USERNAME} && echo "${USERNAME}:123456" | chpasswd
 
 # 为所有 Debian RootFS 安装 Droidspaces USB Manager
-RUN /usr/local/sbin/install-droidspaces-usb-manager --user "${USERNAME}"
+# RUN /usr/local/sbin/install-droidspaces-usb-manager --user "${USERNAME}"
 
 # 添加环境变量
 RUN cat <<'EOF' > /etc/environment
