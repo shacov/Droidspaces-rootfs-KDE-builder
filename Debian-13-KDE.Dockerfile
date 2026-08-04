@@ -166,9 +166,9 @@ RUN sed -i '/en_US.UTF-8/s/^# //' /etc/locale.gen && \
         locale-gen && \
         update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8; \
     fi && \
-    # 配置 SSH 服务（禁用 root 密码登录，但允许常规密码认证）
+    # 配置 SSH 服务（启用 root 密码登录，且允许常规密码认证）
     mkdir -p /var/run/sshd && \
-    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
     # 如果容器内存在默认的 debian 用户，则将其连同家目录一起删除
     deluser --remove-home debian || true && \
@@ -176,6 +176,9 @@ RUN sed -i '/en_US.UTF-8/s/^# //' /etc/locale.gen && \
 
 # 为所有 Debian RootFS 安装 Droidspaces USB Manager
 # RUN /usr/local/sbin/install-droidspaces-usb-manager --user "${USERNAME}"
+RUN if [ "$BUILD_KDE" = "min" ] || [ "$BUILD_KDE" = "conc" ] || [ "$BUILD_KDE" = "mobile" ]; then \
+        /usr/local/sbin/install-droidspaces-usb-manager --user "${USERNAME}"; \
+    fi
 
 # 添加环境变量
 RUN cat <<'EOF' > /etc/environment
