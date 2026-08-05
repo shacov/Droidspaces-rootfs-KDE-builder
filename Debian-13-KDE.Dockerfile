@@ -186,7 +186,8 @@ RUN if [ "$BUILD_KDE" = "min" ] || [ "$BUILD_KDE" = "conc" ] || [ "$BUILD_KDE" =
 # EOF
 # wayland 显示服务器环境变量配置
 RUN if [ "$ENABLE_anland_kde_ARG" != "true" ]; then \
-        : # echo "DISPLAY=:5" >> /etc/environment; \
+        # echo "DISPLAY=:5" >> /etc/environment; \
+        echo "DISPLAY=:5"; \
     else \
         echo "WAYLAND_DISPLAY=wayland-0" >> /etc/environment; \
         echo "QT_QPA_PLATFORM=wayland" >> /etc/environment; \
