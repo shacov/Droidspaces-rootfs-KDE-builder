@@ -181,12 +181,12 @@ RUN if [ "$BUILD_KDE" = "min" ] || [ "$BUILD_KDE" = "conc" ] || [ "$BUILD_KDE" =
     fi
 
 # 添加环境变量
-RUN cat <<'EOF' > /etc/environment
-XCURSOR_SIZE=48
-EOF
+# RUN cat <<'EOF' > /etc/environment
+# XCURSOR_SIZE=48
+# EOF
 # wayland 显示服务器环境变量配置
 RUN if [ "$ENABLE_anland_kde_ARG" != "true" ]; then \
-        echo "DISPLAY=:5" >> /etc/environment; \
+        # echo "DISPLAY=:5" >> /etc/environment; \
     else \
         echo "WAYLAND_DISPLAY=wayland-0" >> /etc/environment; \
         echo "QT_QPA_PLATFORM=wayland" >> /etc/environment; \
